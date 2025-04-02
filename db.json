@@ -1,0 +1,51 @@
+{
+	"users": [
+		{ "id": 1, "name": "user1", "email": "user1@example.com" },
+		{ "id": 2, "name": "user2", "email": "user2@example.com" }
+	],
+
+	"products": [
+		{ "id": 1, "name": "Laptop", "price": 5000000, "stock": 50 },
+		{ "id": 2, "name": "Smartphone", "price": 20000, "stock": 100 },
+		{ "id": 3, "name": "Headphones", "price": 9999, "stock": 200 }
+	],
+
+	"orders": [
+		{
+			"id": 1,
+			"userId": 1,
+			"productId": 1,
+			"quantity": 1,
+			"date": "2023-04-01"
+		},
+		{
+			"id": 2,
+			"userId": 2,
+			"productId": 3,
+			"quantity": 2,
+			"date": "2023-04-02"
+		}
+	],
+
+	"comments": [
+		{
+			"id": 1,
+			"userId": 1,
+			"productId": 1,
+			"text": "Horrible product, got scammed :(",
+			"rating": 1
+		},
+		{
+			"id": 2,
+			"userId": 2,
+			"productId": 3,
+			"text": "good quality.",
+			"rating": 4
+		}
+	],
+
+	"categories": [
+		{ "id": 1, "name": "Electronics", "description": "Electronic devices" },
+		{ "id": 2, "name": "Accessories", "description": "Device accessories" }
+	]
+}
