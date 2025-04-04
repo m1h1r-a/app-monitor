@@ -1,42 +1,39 @@
-import json
 from confluent_kafka import Consumer, KafkaException
+import json
 
-# Kafka configuration
-KAFKA_BROKER = "localhost:9092"
-KAFKA_TOPIC = "orders"
+KAFKA_BROKER = "localhost:9092"  
+TOPICS = ["api_errors"]
+GROUP_ID = "log-consumer-group"
 
-consumer_conf = {
+
+consumer = Consumer({
     "bootstrap.servers": KAFKA_BROKER,
-    "group.id": "order_group",          # Consumer group ID for managing offsets
-    "auto.offset.reset": "earliest"       # Start from the beginning if no offset is committed
-}
+    "group.id": GROUP_ID,  
+    "auto.offset.reset": "earliest"  
+})
 
-# Create a Consumer instance
-consumer = Consumer(consumer_conf)
 
-# Subscribe to the "orders" topic
-consumer.subscribe([KAFKA_TOPIC])
-print("Consumer subscribed to topic 'orders'.")
+consumer.subscribe(TOPICS)
+
+print(f"🔍 Listening to Kafka topics: {TOPICS}...")
 
 try:
     while True:
-        # Poll for messages (1 second timeout)
-        msg = consumer.poll(1.0)
+        msg = consumer.poll(1.0)  
+
         if msg is None:
-            continue  # No message available yet
+            continue
         if msg.error():
-            print(f"Consumer error: {msg.error()}")
+            print(f"Kafka error: {msg.error()}")
             continue
 
-        # Process the message
-        try:
-            order = json.loads(msg.value().decode("utf-8"))
-            print(f"Consumed order: {order}")
-        except Exception as e:
-            print(f"Error processing message: {e}")
+        topic = msg.topic()
+        data = json.loads(msg.value().decode("utf-8"))
+
+        print(f"\nReceived message from {topic}:")
+        print(json.dumps(data, indent=2))
+
 except KeyboardInterrupt:
-    print("Consumer interrupted by user.")
+    print("\nStopping consumer...")
 finally:
-    # Close the consumer cleanly
     consumer.close()
-    print("Consumer closed.")
