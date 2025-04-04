@@ -16,24 +16,17 @@ docker exec -ti kafka /opt/kafka/bin/kafka-console-producer.sh --bootstrap-serve
 
 ## Build from docker images:
 ```bash
+# Start JSON Server
 docker build -t json-server-app .   
+docker run -d -p 3000:3000 --name json-server-container json-server-app
 
-docker build -t kafka-producer ./producer
-docker build -t kafka-consumer ./consumer
-docker build -t workload-simulator ./simulator
+# Start Kafka Broker
+docker run -d --name=kafka -p 9092:9092 apache/kafka
 ```
 
-## Docker network creation:
+## Run Python Scripts Locally(Uncontainerized - In separate Terminals)
 ```bash
-docker network create app-monitor-net 
-
-# to check if it exists:
-docker network ls
-```
-
-## Run docker containers for python scripts
-```bash
-docker run -d --name=producer --network=app-monitor-net kafka-producer
-docker run -d --name=consumer --network=app-monitor-net kafka-consumer
-docker run -d --name=simulator --network=app-monitor-net workload-simulator
+python simulate_requests.py
+python producer.py
+python consumer.py
 ```
