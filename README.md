@@ -27,7 +27,8 @@ docker build -t workload-simulator ./simulator
 ```bash
 docker network create app-monitor-net 
 
-to check if it exists:
+# to check if it exists:
+docker network ls
 ```
 
 ## Run docker containers for python scripts
