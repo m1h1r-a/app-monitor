@@ -39,9 +39,9 @@ def log_response(endpoint, status_code, response_data):
     print(f"Sent to Kafka ({TOPIC_RESPONSES}): {log_data}")
 
 
-def log_error(endpoint, error_message):
+def log_error(endpoint,status_code, error_message):
     """Log API errors to Kafka."""
-    log_data = {"event": "API Error", "endpoint": endpoint, "error": error_message}
+    log_data = {"event": "API Error", "endpoint": endpoint,"status_code": status_code, "error": error_message}
     message = json.dumps(log_data).encode("utf-8")
     producer.produce(TOPIC_ERRORS, value=message)
     producer.flush()

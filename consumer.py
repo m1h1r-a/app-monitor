@@ -101,7 +101,7 @@ try:
         elif data.get("event")=="API Error":
             print(data.get("endpoint"))
             print(data.get("error"))
-            log=build_log(data.get("endpoint"),"N/A",0,0,0.0,data.get("error"),"Error",datetime.now())
+            log=build_log(data.get("endpoint"),"N/A",data.get("status_code"),0,0.0,data.get("error"),"Error",datetime.now())
             insert_log(log)
 
         # order_data = data.get("data", {})

@@ -30,7 +30,8 @@ def generate_random_order():
             ORDER_COUNT += 1
         log_response(endpoint=API_URL, status_code=201, response_data={"response_time": response_time, **response.json()})
     else:
-        log_error(endpoint=API_URL, error_message=response.text)
+        # log_error(endpoint=API_URL, error_message=response.text)
+        log_error(endpoint=API_URL, status_code=response.status_code, error_message=response.text)
 
 def get_all_orders():
     #Fetch all orders from JSON Server.
@@ -43,7 +44,7 @@ def get_all_orders():
     if response.status_code == 200:
         log_response(endpoint=API_URL, status_code=200, response_data={"response_time": response_time, "orders": response.json()})
     else:
-        log_error(endpoint=API_URL, error_message=response.text)
+        log_error(endpoint=API_URL, status_code=response.status_code, error_message=response.text)
 
 def get_unprocessed_orders():
     #Fetch only unprocessed orders.
@@ -56,7 +57,7 @@ def get_unprocessed_orders():
     if response.status_code == 200:
         log_response(endpoint=API_URL, status_code=200, response_data={"response_time": response_time, "unprocessed_orders": response.json()})
     else:
-        log_error(endpoint=API_URL, error_message=response.text)
+        log_error(endpoint=API_URL, status_code=response.status_code, error_message=response.text)
 
 def mark_all_as_processed():
     #Mark all unprocessed orders as processed.
@@ -69,7 +70,7 @@ def mark_all_as_processed():
     if response.status_code in [200, 204]:
         log_response(endpoint=API_URL, status_code=response.status_code, response_data={"response_time": response_time, "message": "All orders processed."})
     else:
-        log_error(endpoint=API_URL, error_message=response.text)
+        log_error(endpoint=API_URL, status_code=response.status_code, error_message=response.text)
 
 def get_processed_orders():
     #Fetch only processed orders.
@@ -82,7 +83,7 @@ def get_processed_orders():
     if response.status_code == 200:
         log_response(endpoint=API_URL, status_code=200, response_data={"response_time": response_time, "processed_orders": response.json()})
     else:
-        log_error(endpoint=API_URL, error_message=response.text)
+        log_error(endpoint=API_URL, status_code=response.status_code, error_message=response.text)
 
 def delete_order(order_id):
     #Delete an order by its ID.
@@ -96,9 +97,9 @@ def delete_order(order_id):
     if response.status_code == 200:
         log_response(endpoint=url, status_code=200, response_data={"response_time": response_time, "message": f"Order {order_id} deleted successfully."})
     elif response.status_code == 404:
-        log_error(endpoint=url, error_message=f"Order {order_id} not found.")
+        log_error(endpoint=url, status_code=response.status_code, error_message=f"Order {order_id} not found.")
     else:
-        log_error(endpoint=url, error_message=response.text)
+        log_error(endpoint=API_URL, status_code=response.status_code, error_message=response.text)
 
 def trigger_other_endpoints():
     #Call other API endpoints after every 10 orders.
