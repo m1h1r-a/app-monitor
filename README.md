@@ -35,13 +35,6 @@ python consumer.py
 ```bash
 docker pull mysql:latest
 
-docker run --name mysql-container \
-    -e MYSQL_ROOT_PASSWORD=password \
-    -e MYSQL_DATABASE=log_monitoring \
-    -p 3307:3306 \
-    -v "$(pwd)"/init.sql:/docker-entrypoint-initdb.d/init.sql \
-    -d mysql:latest
-
 # with volumes:
 docker run --name mysql-container \
   -e MYSQL_ROOT_PASSWORD=password \

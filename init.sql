@@ -1,12 +1,16 @@
--- Switch to the correct database
+DROP DATABASE IF EXISTS log_monitoring;
+CREATE DATABASE log_monitoring;
 USE log_monitoring;
 
--- Create the logs table
-CREATE TABLE IF NOT EXISTS logs (
+CREATE TABLE logs (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    log_level ENUM('INFO', 'WARNING', 'ERROR', 'DEBUG') NOT NULL,
-    message TEXT NOT NULL,
-    source VARCHAR(255) NOT NULL,
-    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    metadata JSON NULL
+    endpoint VARCHAR(255) NOT NULL,
+    method VARCHAR(10) NOT NULL,
+    status_code INT NOT NULL,
+    response INT NOT NULL,
+    response_time TIME NOT NULL,
+    error VARCHAR(255),
+    log_level VARCHAR(50) NOT NULL,
+    metadata JSON DEFAULT NULL,
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
