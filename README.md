@@ -30,3 +30,35 @@ python simulate_requests.py
 python producer.py
 python consumer.py
 ```
+
+## Pull and run mysql container
+```bash
+docker pull mysql:latest
+
+docker run --name mysql-container \
+    -e MYSQL_ROOT_PASSWORD=password \
+    -e MYSQL_DATABASE=log_monitoring \
+    -p 3307:3306 \
+    -v "$(pwd)"/init.sql:/docker-entrypoint-initdb.d/init.sql \
+    -d mysql:latest
+
+# with volumes:
+docker run --name mysql-container \
+  -e MYSQL_ROOT_PASSWORD=password \
+  -e MYSQL_DATABASE=log_monitoring \
+  -p 3307:3306 \
+  -v mysql_data:/var/lib/mysql \
+  -v "$(pwd)"/init.sql:/docker-entrypoint-initdb.d/init.sql \
+  -d mysql:latest
+
+
+# open after container restart
+docker run --name mysql-container \
+  -e MYSQL_ROOT_PASSWORD=password \
+  -e MYSQL_DATABASE=log_monitoring \
+  -p 3307:3306 \
+  -v mysql_data:/var/lib/mysql \
+  -d mysql:latest
+
+docker exec -it mysql-container mysql -u root -p
+```

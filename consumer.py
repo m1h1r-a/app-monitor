@@ -1,16 +1,19 @@
-from confluent_kafka import Consumer, KafkaException
 import json
 
-KAFKA_BROKER = "localhost:9092"  
-TOPICS = ["api_errors"]
+from confluent_kafka import Consumer, KafkaException
+
+KAFKA_BROKER = "localhost:9092"
+TOPICS = ["api_errors", "api_requests", "api_responses"]
 GROUP_ID = "log-consumer-group"
 
 
-consumer = Consumer({
-    "bootstrap.servers": KAFKA_BROKER,
-    "group.id": GROUP_ID,  
-    "auto.offset.reset": "earliest"  
-})
+consumer = Consumer(
+    {
+        "bootstrap.servers": KAFKA_BROKER,
+        "group.id": GROUP_ID,
+        "auto.offset.reset": "earliest",
+    }
+)
 
 
 consumer.subscribe(TOPICS)
@@ -19,7 +22,7 @@ print(f"🔍 Listening to Kafka topics: {TOPICS}...")
 
 try:
     while True:
-        msg = consumer.poll(1.0)  
+        msg = consumer.poll(1.0)
 
         if msg is None:
             continue
