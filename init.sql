@@ -8,7 +8,7 @@ CREATE TABLE logs (
     method VARCHAR(10) NOT NULL,
     status_code INT NOT NULL,
     response INT NOT NULL,
-    response_time TIME NOT NULL,
+    response_time FLOAT NOT NULL,
     error VARCHAR(255),
     log_level VARCHAR(50) NOT NULL,
     metadata JSON DEFAULT NULL,
