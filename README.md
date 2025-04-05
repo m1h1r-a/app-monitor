@@ -55,3 +55,9 @@ docker run --name mysql-container \
 
 docker exec -it mysql-container mysql -u root -p
 ```
+## Dependencies to run consumer.py locally
+```bash
+pip install confluent_kafka
+pip install pymysql
+pip install cryptography
+```
