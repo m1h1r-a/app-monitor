@@ -1,10 +1,12 @@
 import json
 import pymysql
-from datetime import datetime, timedelta
-from confluent_kafka import Consumer, KafkaException
+from datetime import datetime
+from confluent_kafka import Consumer
+from prometheus_client import start_http_server, Counter, Summary
+import threading
 
 KAFKA_BROKER = "localhost:9092"
-TOPICS = ["api_errors","api_requests","api_responses"]
+TOPICS = ["api_errors", "api_requests", "api_responses"]
 GROUP_ID = "log-consumer-group"
 
 # MySQL Connection
@@ -18,18 +20,25 @@ db = pymysql.connect(
     autocommit=True
 )
 
-consumer = Consumer(
-    {
-        "bootstrap.servers": KAFKA_BROKER,
-        "group.id": GROUP_ID,
-        "auto.offset.reset": "earliest",
-    }
-)
-
-
+consumer = Consumer({
+    "bootstrap.servers": KAFKA_BROKER,
+    "group.id": GROUP_ID,
+    "auto.offset.reset": "earliest",
+})
 consumer.subscribe(TOPICS)
 
-print(f"🔍 Listening to Kafka topics: {TOPICS}...")
+# Prometheus metrics
+REQUEST_COUNTER = Counter("api_requests_total", "Total number of API requests", ["endpoint", "method"])
+RESPONSE_COUNTER = Counter("api_responses_total", "Total number of API responses", ["endpoint", "status_code"])
+ERROR_COUNTER = Counter("api_errors_total", "Total number of API errors", ["endpoint", "error"])
+RESPONSE_TIME = Summary("api_response_time_seconds", "API response time in seconds", ["endpoint"])
+
+# Start Prometheus server on port 8000
+def start_prometheus_server():
+    start_http_server(8000)
+    print("Prometheus metrics available at http://localhost:8000/metrics")
+
+threading.Thread(target=start_prometheus_server, daemon=True).start()
 
 def insert_log(log):
     try:
@@ -54,23 +63,23 @@ def insert_log(log):
     except Exception as e:
         print(f"MySQL insert error: {e}")
 
-def build_log(endpoint,method,status_code,response,response_time,error,log_level,timestamp):
-    log={
-        "endpoint":endpoint,
-        "method":method,
-        "status_code":status_code,
-        "response":response,
-        "response_time":response_time,
-        "error":error,
-        "log_level":log_level,
-        "timestamp":timestamp
+def build_log(endpoint, method, status_code, response, response_time, error, log_level, timestamp):
+    return {
+        "endpoint": endpoint,
+        "method": method,
+        "status_code": status_code,
+        "response": response,
+        "response_time": response_time,
+        "error": error,
+        "log_level": log_level,
+        "timestamp": timestamp
     }
-    return log
+
+print(f"🔍 Listening to Kafka topics: {TOPICS}...")
 
 try:
     while True:
         msg = consumer.poll(1.0)
-
         if msg is None:
             continue
         if msg.error():
@@ -81,76 +90,42 @@ try:
         data = json.loads(msg.value().decode("utf-8"))
 
         print(f"\nReceived message from {topic}:")
-        print(len(data))
+        print(json.dumps(data, indent=2))
 
-        if data.get("event")=="API Request":
-            print(data.get("endpoint"))
-            print(data.get("method"))       
-            log=build_log(data.get("endpoint"),data.get("method"),0,0,0.0,None,"Request",datetime.now())
+        timestamp = datetime.now()
+
+        if data.get("event") == "API Request":
+            endpoint = data.get("endpoint")
+            method = data.get("method")
+
+            REQUEST_COUNTER.labels(endpoint=endpoint, method=method).inc()
+
+            log = build_log(endpoint, method, 0, 0, 0.0, None, "Request", timestamp)
             insert_log(log)
 
-        elif data.get("event")=="API Response":
-            print(data.get("endpoint"))
-            print(data.get("status_code"))
-            response=data.get("response")
-            print(response["response_time"])
+        elif data.get("event") == "API Response":
+            endpoint = data.get("endpoint")
+            status_code = data.get("status_code")
+            response = data.get("response", {})
             response_time = response.get("response_time", 0.0)
-            log=build_log(data.get("endpoint"),"N/A",data.get("status_code"),1,response_time,None,"Response",datetime.now())
+
+            RESPONSE_COUNTER.labels(endpoint=endpoint, status_code=status_code).inc()
+            RESPONSE_TIME.labels(endpoint=endpoint).observe(response_time)
+
+            log = build_log(endpoint, "N/A", status_code, 1, response_time, None, "Response", timestamp)
             insert_log(log)
 
-        elif data.get("event")=="API Error":
-            print(data.get("endpoint"))
-            print(data.get("error"))
-            log=build_log(data.get("endpoint"),"N/A",data.get("status_code"),0,0.0,data.get("error"),"Error",datetime.now())
+        elif data.get("event") == "API Error":
+            endpoint = data.get("endpoint")
+            error = data.get("error")
+            status_code = data.get("status_code", 500)
+
+            ERROR_COUNTER.labels(endpoint=endpoint, error=error).inc()
+
+            log = build_log(endpoint, "N/A", status_code, 0, 0.0, error, "Error", timestamp)
             insert_log(log)
-
-        # order_data = data.get("data", {})
-        # print("Order data:")
-        # print(json.dumps(order_data, indent=2))
-
-        # print(json.dumps(data, indent=2))
 
 except KeyboardInterrupt:
     print("\nStopping consumer...")
 finally:
     consumer.close()
-
-
-# Received message from api_requests:
-# {
-#   "event": "API Request",
-#   "endpoint": "http://localhost:3000/orders",
-#   "method": "POST",
-#   "data": {
-#     "userId": 4,
-#     "productId": 3,
-#     "quantity": 1,
-#     "date": "2025-04-05",
-#     "processed": false
-#   }
-# }
-
-
-# Received message from api_responses:
-# {
-#   "event": "API Response",
-#   "endpoint": "http://localhost:3000/orders",
-#   "status_code": 201,
-#   "response": {
-#     "response_time": 0.0231,
-#     "id": "e0ad",
-#     "userId": 3,
-#     "productId": 1,
-#     "quantity": 4,
-#     "date": "2025-04-05",
-#     "processed": false
-#   }
-# }
-
-
-# Received message from api_errors:
-# {
-#   "event": "API Error",
-#   "endpoint": "http://localhost:3000/orders",
-#   "error": "Not Found"
-# }

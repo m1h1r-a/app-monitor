@@ -1,0 +1,8 @@
+# prometheus.yml
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: "python-kafka-consumer"
+    static_configs:
+      - targets: ["host.docker.internal:8000"]  
