@@ -55,9 +55,31 @@ docker run --name mysql-container \
 
 docker exec -it mysql-container mysql -u root -p
 ```
+## Prometheus on Docker
+```bash
+#create container
+docker run --name prometheus-container \
+  -p 9090:9090 \
+  -v "$(pwd)/prometheus.yml":/etc/prometheus/prometheus.yml \
+  -v prometheus_data:/prometheus \
+  -d prom/prometheus
+
+#start conatiner
+docker start prometheus-container
+
+# view metrics on
+http://localhost:9090
+Try querying:
+    api_requests_total
+    api_responses_total
+    api_errors_total
+    api_response_time_seconds_bucket
+```
+
 ## Dependencies to run consumer.py locally
 ```bash
 pip install confluent_kafka
 pip install pymysql
 pip install cryptography
+pip install prometheus_client
 ```
