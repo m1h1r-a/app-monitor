@@ -1,4 +1,4 @@
- app-monitor
+# app-monitor
 
 ## Use docker-compose to run all containers
 ```bash
@@ -16,7 +16,7 @@ docker exec -it mysql-container mysql -u root -p
 ```sql
 use log_monitoring;
 select * from logs limit 50;
-
+```
 
 ## view metrics on prometheus
 ```bash
