@@ -1,0 +1,5 @@
+confluent_kafka
+pymysql
+cryptography
+prometheus_client
+requests
