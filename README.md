@@ -31,7 +31,7 @@ Try querying:
 
 ## Access Grafana Dashboard
 ```bash
-http://localhost:3000
+http://localhost:3001
 ```
 
 Login with:
