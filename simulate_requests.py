@@ -13,15 +13,7 @@ print(
 )
 print(f"DEBUG - Environment API_URL: '{os.environ.get('API_URL', 'not set')}'")
 
-# Define more distinct endpoints for better visualization
-BASE_URL = os.environ.get("API_URL", "http://json-server:3000").split("/orders")[0]
-ENDPOINTS = {
-    "orders": f"{BASE_URL}/orders",
-    "users": f"{BASE_URL}/users",
-    "products": f"{BASE_URL}/products",
-    "analytics": f"{BASE_URL}/analytics"
-}
-
+API_URL = os.environ.get("API_URL", "http://json-server:3000/orders")
 ORDER_COUNT = 0
 LOCK = threading.Lock()
 
@@ -41,34 +33,6 @@ def get_current_traffic_factor():
     else:  # Night
         return random.uniform(0.1, 0.3)
 
-def generate_data_for_endpoint(endpoint_key):
-    if endpoint_key == "orders":
-        return {
-            "userId": random.randint(1, 15),
-            "productId": random.randint(1, 3),
-            "quantity": random.randint(1, 5),
-            "date": time.strftime("%Y-%m-%d"),
-            "processed": False,
-        }
-    elif endpoint_key == "users":
-        return {
-            "name": f"User{random.randint(100, 999)}",
-            "email": f"user{random.randint(100, 999)}@example.com",
-            "active": random.choice([True, False])
-        }
-    elif endpoint_key == "products":
-        return {
-            "name": f"Product{random.randint(100, 999)}",
-            "price": round(random.uniform(10.0, 100.0), 2),
-            "inStock": random.choice([True, False])
-        }
-    elif endpoint_key == "analytics":
-        return {
-            "period": random.choice(["daily", "weekly", "monthly"]),
-            "metric": random.choice(["sales", "views", "conversions"])
-        }
-    return {}
-
 def simulate_error(endpoint):
     # Simulate different types of errors
     error_types = [
@@ -83,122 +47,275 @@ def simulate_error(endpoint):
     log_error(endpoint=endpoint, status_code=error["status"], error_message=error["message"])
     return error
 
-def make_request(endpoint, method, data=None):
+def generate_random_order():
+    # generate random order to json server.
     global ORDER_COUNT
+    
+    # Simulate network delay
     simulate_network_delay()
     
-    log_request(endpoint=endpoint, method=method, data=data)
+    order = {
+        "userId": random.randint(1, 2),  # Based on db.json
+        "productId": random.randint(1, 3),  # Based on db.json
+        "quantity": random.randint(1, 5),
+        "date": time.strftime("%Y-%m-%d"),
+        "processed": "false",  # String "false" to match db.json format
+    }
+
+    log_request(endpoint=API_URL, method="POST", data=order)
+
     start_time = time.time()
     
     # Simulate random errors (5% chance)
     if random.random() < 0.05:
-        error = simulate_error(endpoint)
+        simulate_error(API_URL)
         return
     
     try:
-        if method == "GET":
-            response = requests.get(endpoint)
-        elif method == "POST":
-            response = requests.post(endpoint, json=data)
-        elif method == "PUT":
-            # Get a random ID to update
-            item_id = random.randint(1, 10)
-            response = requests.put(f"{endpoint}/{item_id}", json=data)
-        elif method == "DELETE":
-            # Get a random ID to delete
-            item_id = random.randint(1, 10)
-            response = requests.delete(f"{endpoint}/{item_id}")
-        elif method == "PATCH":
-            # Get a random ID to patch
-            item_id = random.randint(1, 10)
-            response = requests.patch(f"{endpoint}/{item_id}", json=data)
-        
+        response = requests.post(API_URL, json=order)
         response_time = round(time.time() - start_time, 4)
-        
-        if 200 <= response.status_code < 300:
-            if method == "POST" and endpoint == ENDPOINTS["orders"]:
-                with LOCK:
-                    ORDER_COUNT += 1
-            
-            response_data = {
-                "response_time": response_time
-            }
-            
-            # Try to include JSON response if available
-            try:
-                if response.text:
-                    response_data.update(response.json())
-            except:
-                response_data["message"] = f"{method} operation completed"
-                
+
+        if response.status_code == 201:
+            with LOCK:
+                ORDER_COUNT += 1
             log_response(
-                endpoint=endpoint,
-                status_code=response.status_code,
-                response_data=response_data
+                endpoint=API_URL,
+                status_code=201,
+                response_data={"response_time": response_time, **response.json()},
             )
         else:
             log_error(
-                endpoint=endpoint,
+                endpoint=API_URL,
                 status_code=response.status_code,
-                error_message=response.text
+                error_message=response.text,
             )
     except requests.exceptions.RequestException as e:
-        log_error(endpoint=endpoint, status_code=500, error_message=str(e))
+        log_error(endpoint=API_URL, status_code=500, error_message=str(e))
+
+
+def get_all_orders():
+    # Fetch all orders from JSON Server.
+    simulate_network_delay()
+    
+    log_request(endpoint=API_URL, method="GET")
+    start_time = time.time()
+    
+    # Simulate random errors (5% chance)
+    if random.random() < 0.05:
+        simulate_error(API_URL)
+        return
+
+    try:
+        response = requests.get(API_URL)
+        response_time = round(time.time() - start_time, 4)
+
+        if response.status_code == 200:
+            log_response(
+                endpoint=API_URL,
+                status_code=200,
+                response_data={
+                    "response_time": response_time,
+                    "orders": response.json(),
+                },
+            )
+        else:
+            log_error(
+                endpoint=API_URL,
+                status_code=response.status_code,
+                error_message=response.text,
+            )
+    except requests.exceptions.RequestException as e:
+        log_error(endpoint=API_URL, status_code=500, error_message=str(e))
+
+
+def get_unprocessed_orders():
+    # Fetch only unprocessed orders.
+    simulate_network_delay()
+    
+    unprocessed_url = API_URL + "?processed=false"
+    log_request(endpoint=unprocessed_url, method="GET")
+    start_time = time.time()
+    
+    # Simulate random errors (5% chance)
+    if random.random() < 0.05:
+        simulate_error(unprocessed_url)
+        return
+
+    try:
+        response = requests.get(unprocessed_url)
+        response_time = round(time.time() - start_time, 4)
+
+        if response.status_code == 200:
+            log_response(
+                endpoint=unprocessed_url,
+                status_code=200,
+                response_data={
+                    "response_time": response_time,
+                    "unprocessed_orders": response.json(),
+                },
+            )
+        else:
+            log_error(
+                endpoint=unprocessed_url,
+                status_code=response.status_code,
+                error_message=response.text,
+            )
+    except requests.exceptions.RequestException as e:
+        log_error(endpoint=unprocessed_url, status_code=500, error_message=str(e))
+
+
+def mark_all_as_processed():
+    # Mark all unprocessed orders as processed.
+    simulate_network_delay()
+    
+    log_request(endpoint=API_URL, method="PATCH", data={"processed": "true"})
+    start_time = time.time()
+    
+    # Simulate random errors (5% chance)
+    if random.random() < 0.05:
+        simulate_error(API_URL)
+        return
+
+    try:
+        response = requests.patch(API_URL, json={"processed": "true"})
+        response_time = round(time.time() - start_time, 4)
+
+        if response.status_code in [200, 204]:
+            log_response(
+                endpoint=API_URL,
+                status_code=response.status_code,
+                response_data={
+                    "response_time": response_time,
+                    "message": "All orders processed.",
+                },
+            )
+        else:
+            log_error(
+                endpoint=API_URL,
+                status_code=response.status_code,
+                error_message=response.text,
+            )
+    except requests.exceptions.RequestException as e:
+        log_error(endpoint=API_URL, status_code=500, error_message=str(e))
+
+
+def get_processed_orders():
+    # Fetch only processed orders.
+    simulate_network_delay()
+    
+    processed_url = API_URL + "?processed=true"
+    log_request(endpoint=processed_url, method="GET")
+    start_time = time.time()
+    
+    # Simulate random errors (5% chance)
+    if random.random() < 0.05:
+        simulate_error(processed_url)
+        return
+
+    try:
+        response = requests.get(processed_url)
+        response_time = round(time.time() - start_time, 4)
+
+        if response.status_code == 200:
+            log_response(
+                endpoint=processed_url,
+                status_code=200,
+                response_data={
+                    "response_time": response_time,
+                    "processed_orders": response.json(),
+                },
+            )
+        else:
+            log_error(
+                endpoint=processed_url,
+                status_code=response.status_code,
+                error_message=response.text,
+            )
+    except requests.exceptions.RequestException as e:
+        log_error(endpoint=processed_url, status_code=500, error_message=str(e))
+
+
+def delete_order(order_id):
+    # Delete an order by its ID.
+    simulate_network_delay()
+    
+    url = f"{API_URL}/{order_id}"
+    log_request(endpoint=url, method="DELETE")
+    start_time = time.time()
+    
+    # Simulate random errors (5% chance)
+    if random.random() < 0.05:
+        simulate_error(url)
+        return
+
+    try:
+        response = requests.delete(url)
+        response_time = round(time.time() - start_time, 4)
+
+        if response.status_code == 200:
+            log_response(
+                endpoint=url,
+                status_code=200,
+                response_data={
+                    "response_time": response_time,
+                    "message": f"Order {order_id} deleted successfully.",
+                },
+            )
+        elif response.status_code == 404:
+            log_error(
+                endpoint=url,
+                status_code=response.status_code,
+                error_message=f"Order {order_id} not found.",
+            )
+        else:
+            log_error(
+                endpoint=url,
+                status_code=response.status_code,
+                error_message=response.text,
+            )
+    except requests.exceptions.RequestException as e:
+        log_error(endpoint=url, status_code=500, error_message=str(e))
+
 
 def simulate_traffic_burst():
     # Simulate a sudden burst of traffic
     print("⚡ Traffic burst starting...")
-    burst_requests = random.randint(15, 30)
+    burst_requests = random.randint(10, 20)
     
     for _ in range(burst_requests):
-        endpoint_key = random.choice(list(ENDPOINTS.keys()))
-        endpoint = ENDPOINTS[endpoint_key]
-        method = random.choices(
-            ["GET", "POST", "PUT", "DELETE", "PATCH"], 
-            weights=[0.6, 0.2, 0.1, 0.05, 0.05]
-        )[0]
-        data = None
-        if method in ["POST", "PUT", "PATCH"]:
-            data = generate_data_for_endpoint(endpoint_key)
-        
-        thread = threading.Thread(target=make_request, args=(endpoint, method, data))
+        thread = threading.Thread(target=generate_random_order)
         thread.start()
         time.sleep(random.uniform(0.1, 0.3))  # Small delay between burst requests
     
     print(f"⚡ Traffic burst completed: {burst_requests} requests")
 
+
+def trigger_other_endpoints():
+    # Call other API endpoints after every 10 orders.
+    get_all_orders()
+    delete_order(random.randint(1, 2))  # Randomly delete order 1 or 2
+    get_unprocessed_orders()
+    mark_all_as_processed()
+    get_processed_orders()
+
+
 def simulate_load():
-    # Continuously generate random requests with realistic patterns
+    # Continuously generate random orders and trigger logs every 10 orders.
     global ORDER_COUNT
-
-    print(f"Simulation started. Base URL: {BASE_URL}")
-    print(f"Available endpoints: {', '.join(ENDPOINTS.keys())}")
-
+    
+    print(f"Simulation started. API URL: {API_URL}")
+    
     # Initial delay to ensure all services are up
     time.sleep(10)
     
     burst_timer = 0
-    
+
     while True:
-        # Determine current traffic level
+        # Determine current traffic level based on time of day
         traffic_factor = get_current_traffic_factor()
         delay = random.uniform(2, 7) / traffic_factor
         
-        # Select random endpoint and method
-        endpoint_key = random.choice(list(ENDPOINTS.keys()))
-        endpoint = ENDPOINTS[endpoint_key]
-        
-        method = random.choices(
-            ["GET", "POST", "PUT", "DELETE", "PATCH"], 
-            weights=[0.6, 0.2, 0.1, 0.05, 0.05]
-        )[0]
-        
-        # Generate appropriate data based on method and endpoint
-        data = None
-        if method in ["POST", "PUT", "PATCH"]:
-            data = generate_data_for_endpoint(endpoint_key)
-        
-        thread = threading.Thread(target=make_request, args=(endpoint, method, data))
+        thread = threading.Thread(target=generate_random_order)
         thread.start()
         
         # Occasionally trigger other operations
@@ -218,15 +335,6 @@ def simulate_load():
             
         time.sleep(delay)
 
-def trigger_other_endpoints():
-    # Call various endpoints to generate diverse metrics
-    endpoints = list(ENDPOINTS.values())
-    
-    for endpoint in endpoints:
-        # Make a GET request to each endpoint
-        thread = threading.Thread(target=make_request, args=(endpoint, "GET", None))
-        thread.start()
-        time.sleep(random.uniform(0.5, 1.5))
 
 if __name__ == "__main__":
     # Wait a bit to ensure all services are up
