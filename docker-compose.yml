@@ -143,6 +143,24 @@ services:
     environment:
       KAFKA_BROKER: "kafka:9092"
       API_URL: "http://json-server:3000/orders"
+  # Grafana
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana-container
+    ports:
+      - "3001:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    restart: unless-stopped
+    networks:
+      - app-network
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    depends_on:
+      - prometheus
 
 networks:
   app-network:
@@ -151,3 +169,4 @@ networks:
 volumes:
   mysql_data_new:
   prometheus_data:
+  grafana_data:

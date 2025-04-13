@@ -28,3 +28,12 @@ Try querying:
     api_errors_total
     api_response_time_seconds_bucket
 ```
+
+## Access Grafana Dashboard
+```bash
+http://localhost:3000
+```
+
+Login with:
+- **Username**: `admin`
+- **Password**: `admin`

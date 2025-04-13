@@ -51,10 +51,15 @@ producer = Producer(kafka_config)
 
 def log_request(endpoint, method, data=None):
     """Log API requests to Kafka."""
+    # Extract service name from endpoint for better categorization
+    service = endpoint.split("/")[-1] if "/" in endpoint else "unknown"
+    
     log_data = {
         "event": "API Request",
         "endpoint": endpoint,
         "method": method,
+        "service": service,
+        "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
         "data": data,
     }
     message = json.dumps(log_data).encode("utf-8")
@@ -65,10 +70,17 @@ def log_request(endpoint, method, data=None):
 
 def log_response(endpoint, status_code, response_data):
     """Log API responses to Kafka."""
+    # Extract service and categorize response
+    service = endpoint.split("/")[-1] if "/" in endpoint else "unknown"
+    category = "success" if 200 <= status_code < 300 else "redirect" if 300 <= status_code < 400 else "error"
+    
     log_data = {
         "event": "API Response",
         "endpoint": endpoint,
         "status_code": status_code,
+        "service": service,
+        "category": category,
+        "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
         "response": response_data,
     }
     message = json.dumps(log_data).encode("utf-8")
@@ -79,10 +91,17 @@ def log_response(endpoint, status_code, response_data):
 
 def log_error(endpoint, status_code, error_message):
     """Log API errors to Kafka."""
+    # Extract service and categorize error
+    service = endpoint.split("/")[-1] if "/" in endpoint else "unknown"
+    error_type = "client_error" if 400 <= status_code < 500 else "server_error"
+    
     log_data = {
         "event": "API Error",
         "endpoint": endpoint,
         "status_code": status_code,
+        "service": service,
+        "error_type": error_type,
+        "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
         "error": error_message,
     }
     message = json.dumps(log_data).encode("utf-8")
