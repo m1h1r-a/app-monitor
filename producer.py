@@ -134,4 +134,4 @@ if __name__ == "__main__":
 
     # keep container running
     while True:
-        time.sleep(60)
+        time.sleep(10)

@@ -320,7 +320,7 @@ def simulate_load():
         
         # Occasionally trigger other operations
         with LOCK:
-            if ORDER_COUNT % 10 == 0 and ORDER_COUNT > 0:
+            if ORDER_COUNT % 4 == 0 and ORDER_COUNT > 0:
                 print("\nTriggering other endpoints after 10 orders...\n")
                 thread_trigger = threading.Thread(target=trigger_other_endpoints)
                 thread_trigger.start()
